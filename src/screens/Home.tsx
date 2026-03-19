@@ -1,16 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Especialidade } from "../types/especialidade";
 import { Paciente } from "../types/paciente";
 import { Medico } from "../interfaces/medico";
 import { Consulta } from "../interfaces/consulta";
+
 import ConsultaCard from "../components/ConsultaCard";
 import { styles } from "../styles/app.styles";
 
-export default function Home() {
+const STORAGE_KEY = "@consultas:consulta_atual";
 
+export default function Home() {
   const cardiologia: Especialidade = {
     id: 1,
     nome: "Cardiologia",
@@ -33,39 +36,77 @@ export default function Home() {
     telefone: "(11) 98765-4321",
   };
 
-  const [consulta, setConsulta] = useState<Consulta>({
+  const consultaInicial: Consulta = {
     id: 1,
     medico: medico1,
     paciente: paciente1,
-    data: new Date(2026, 2, 10),
+    data: new Date(),
     valor: 350,
     status: "agendada",
     observacoes: "Consulta de rotina",
-  });
+  };
+
+  const [consulta, setConsulta] = useState<Consulta>(consultaInicial);
+
+  useEffect(() => {
+    carregarConsulta();
+  }, []);
+
+  async function carregarConsulta() {
+    try {
+      const dados = await AsyncStorage.getItem(STORAGE_KEY);
+
+      if (dados) {
+        const consultaObj = JSON.parse(dados);
+        consultaObj.data = new Date(consultaObj.data);
+        setConsulta(consultaObj);
+      }
+    } catch (erro) {
+      console.error("Erro ao carregar:", erro);
+    }
+  }
+
+  async function salvarConsulta(consultaAtualizada: Consulta) {
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(consultaAtualizada)
+      );
+    } catch (erro) {
+      console.error("Erro ao salvar:", erro);
+    }
+  }
 
   function confirmarConsulta() {
-    setConsulta({ ...consulta, status: "confirmada" });
+    const nova = {
+      ...consulta,
+      status: "confirmada" as const,
+    };
+
+    setConsulta(nova);
+    salvarConsulta(nova);
   }
 
   function cancelarConsulta() {
-    setConsulta({ ...consulta, status: "cancelada" });
+    const nova = {
+      ...consulta,
+      status: "cancelada" as const,
+    };
+
+    setConsulta(nova);
+    salvarConsulta(nova);
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        consulta.status === "confirmada" && styles.containerConfirmado,
-        consulta.status === "cancelada" && styles.containerCancelado,
-      ]}
-    >
+    <View style={styles.container}>
       <StatusBar style="light" />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-
         <View style={styles.header}>
           <Text style={styles.titulo}>Sistema de Consultas</Text>
-          <Text style={styles.subtitulo}>Consulta #{consulta.id}</Text>
+          <Text style={styles.subtitulo}>
+            Consulta #{consulta.id}
+          </Text>
         </View>
 
         <ConsultaCard
@@ -73,7 +114,6 @@ export default function Home() {
           onConfirmar={confirmarConsulta}
           onCancelar={cancelarConsulta}
         />
-
       </ScrollView>
     </View>
   );
