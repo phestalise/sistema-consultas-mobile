@@ -2,9 +2,10 @@ import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 10,
     padding: 16,
+    marginBottom: 16,
   },
   statusBadge: {
     alignSelf: "flex-start",
@@ -21,7 +22,7 @@ export const styles = StyleSheet.create({
     backgroundColor: "#C62828",
   },
   statusTexto: {
-    color: "#fff",
+    color: "#FFFFFF",
     fontWeight: "bold",
     fontSize: 12,
   },

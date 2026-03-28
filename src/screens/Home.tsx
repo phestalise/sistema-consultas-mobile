@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import { StatusBar } from "expo-status-bar";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Especialidade } from "../types/especialidade";
@@ -11,7 +12,7 @@ import { Consulta } from "../interfaces/consulta";
 import ConsultaCard from "../components/ConsultaCard";
 import { styles } from "../styles/app.styles";
 
-const STORAGE_KEY = "@consultas:consulta_atual";
+import { getConsultas, saveConsultas } from "../services/storage";
 
 export default function Home() {
   const cardiologia: Especialidade = {
@@ -46,55 +47,35 @@ export default function Home() {
     observacoes: "Consulta de rotina",
   };
 
-  const [consulta, setConsulta] = useState<Consulta>(consultaInicial);
+  const [consultas, setConsultas] = useState<Consulta[]>([]);
 
   useEffect(() => {
-    carregarConsulta();
+    carregar();
   }, []);
 
-  async function carregarConsulta() {
-    try {
-      const dados = await AsyncStorage.getItem(STORAGE_KEY);
+  async function carregar() {
+    const dados = await getConsultas();
 
-      if (dados) {
-        const consultaObj = JSON.parse(dados);
-        consultaObj.data = new Date(consultaObj.data);
-        setConsulta(consultaObj);
-      }
-    } catch (erro) {
-      console.error("Erro ao carregar:", erro);
+    if (dados.length === 0) {
+      const lista = [consultaInicial];
+      setConsultas(lista);
+      await saveConsultas(lista);
+    } else {
+      const listaConvertida = dados.map((c) => ({
+        ...c,
+        data: new Date(c.data),
+      }));
+      setConsultas(listaConvertida);
     }
   }
 
-  async function salvarConsulta(consultaAtualizada: Consulta) {
-    try {
-      await AsyncStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(consultaAtualizada)
-      );
-    } catch (erro) {
-      console.error("Erro ao salvar:", erro);
-    }
-  }
+  async function atualizarStatus(id: number, status: "confirmada" | "cancelada") {
+    const novaLista = consultas.map((c) =>
+      c.id === id ? { ...c, status } : c
+    );
 
-  function confirmarConsulta() {
-    const nova = {
-      ...consulta,
-      status: "confirmada" as const,
-    };
-
-    setConsulta(nova);
-    salvarConsulta(nova);
-  }
-
-  function cancelarConsulta() {
-    const nova = {
-      ...consulta,
-      status: "cancelada" as const,
-    };
-
-    setConsulta(nova);
-    salvarConsulta(nova);
+    setConsultas(novaLista);
+    await saveConsultas(novaLista);
   }
 
   return (
@@ -104,16 +85,16 @@ export default function Home() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.titulo}>Sistema de Consultas</Text>
-          <Text style={styles.subtitulo}>
-            Consulta #{consulta.id}
-          </Text>
         </View>
 
-        <ConsultaCard
-          consulta={consulta}
-          onConfirmar={confirmarConsulta}
-          onCancelar={cancelarConsulta}
-        />
+        {consultas.map((consulta) => (
+          <ConsultaCard
+            key={consulta.id}
+            consulta={consulta}
+            onConfirmar={() => atualizarStatus(consulta.id, "confirmada")}
+            onCancelar={() => atualizarStatus(consulta.id, "cancelada")}
+          />
+        ))}
       </ScrollView>
     </View>
   );
