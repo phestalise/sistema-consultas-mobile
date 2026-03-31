@@ -1,87 +1,221 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, Button, Alert } from "react-native";
-import { addConsulta } from "../services/storage";
-import { styles } from "../styles/app.styles";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  ScrollView,
+  Alert,
+} from "react-native";
+import { StatusBar } from "expo-status-bar";
+import {
+  obterEspecialidades,
+  obterMedicos,
+  salvarEspecialidades,
+  salvarMedicos,
+  obterConsultas,
+  salvarConsultas,
+} from "../services/storage";
+import { Especialidade } from "../types/especialidade";
+import { Medico } from "../interfaces/medico";
+import { Paciente } from "../types/paciente";
+import { Consulta } from "../interfaces/consulta";
 
 export default function Admin({ navigation }: any) {
-  const [paciente, setPaciente] = useState("");
-  const [medico, setMedico] = useState("");
+  const [nomeEsp, setNomeEsp] = useState("");
+  const [descEsp, setDescEsp] = useState("");
+  const [especialidades, setEspecialidades] = useState<Especialidade[]>([]);
 
-  async function salvar() {
-    if (!paciente || !medico) {
-      Alert.alert("Erro", "Preencha todos os campos");
+  const [nomeMed, setNomeMed] = useState("");
+  const [crmMed, setCrmMed] = useState("");
+  const [medicos, setMedicos] = useState<Medico[]>([]);
+
+  const [nomePac, setNomePac] = useState("");
+  const [dataConsulta, setDataConsulta] = useState("");
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  async function carregarDados() {
+    const esps = await obterEspecialidades();
+    const meds = await obterMedicos();
+    setEspecialidades(esps);
+    setMedicos(meds);
+  }
+
+  function adicionarEspecialidade() {
+    if (!nomeEsp || !descEsp) {
+      Alert.alert("Erro", "Preencha nome e descrição");
       return;
     }
 
-    const nova = {
-      id: Date.now(),
-      status: "agendada",
-      data: new Date(),
-      valor: 350,
-      observacoes: "Criada via Admin",
-
-      paciente: {
-        id: Date.now(),
-        nome: paciente,
-        cpf: "000.000.000-00",
-        email: "email@email.com",
-        telefone: "",
-      },
-
-      medico: {
-        id: Date.now(),
-        nome: medico,
-        crm: "CRM000",
-        ativo: true,
-        especialidade: {
-          id: 1,
-          nome: "Clínico Geral",
-          descricao: "Atendimento geral",
-        },
-      },
+    const novaEsp: Especialidade = {
+      id: especialidades.length + 1,
+      nome: nomeEsp,
+      descricao: descEsp,
     };
 
-    await addConsulta(nova);
+    const novasEsps = [...especialidades, novaEsp];
+    setEspecialidades(novasEsps);
+    salvarEspecialidades(novasEsps);
 
-    Alert.alert("Sucesso", "Consulta criada!");
-    navigation.goBack();
+    setNomeEsp("");
+    setDescEsp("");
+    Alert.alert("Sucesso", "Especialidade adicionada!");
+  }
+
+  function adicionarMedico() {
+    if (!nomeMed || !crmMed) {
+      Alert.alert("Erro", "Preencha nome e CRM");
+      return;
+    }
+
+    if (especialidades.length === 0) {
+      Alert.alert("Erro", "Adicione uma especialidade primeiro!");
+      return;
+    }
+
+    const novoMed: Medico = {
+      id: medicos.length + 1,
+      nome: nomeMed,
+      crm: crmMed,
+      especialidade: especialidades[0],
+      ativo: true,
+    };
+
+    const novosMeds = [...medicos, novoMed];
+    setMedicos(novosMeds);
+    salvarMedicos(novosMeds);
+
+    setNomeMed("");
+    setCrmMed("");
+    Alert.alert("Sucesso", "Médico adicionado!");
+  }
+
+  async function criarConsultaTeste() {
+    if (!nomePac || !dataConsulta) {
+      Alert.alert("Erro", "Preencha nome do paciente e data");
+      return;
+    }
+
+    if (medicos.length === 0) {
+      Alert.alert("Erro", "Adicione um médico primeiro!");
+      return;
+    }
+
+    const pacienteTeste: Paciente = {
+      id: 1,
+      nome: nomePac,
+      cpf: "123.456.789-00",
+      email: "paciente@email.com",
+      telefone: "(11) 98765-4321",
+    };
+
+    const [dia, mes, ano] = dataConsulta.split("/");
+    const data = new Date(Number(ano), Number(mes) - 1, Number(dia));
+
+    const novaConsulta: Consulta = {
+      id: Date.now(),
+      medico: medicos[0],
+      paciente: pacienteTeste,
+      data: data,
+      valor: 350,
+      status: "agendada",
+      observacoes: "Consulta de teste",
+    };
+
+    const consultasAtuais = await obterConsultas();
+    await salvarConsultas([...consultasAtuais, novaConsulta]);
+
+    setNomePac("");
+    setDataConsulta("");
+
+    Alert.alert("Sucesso", "Consulta criada! Volte para Home", [
+      { text: "OK", onPress: () => navigation.navigate("Home") },
+    ]);
   }
 
   return (
-    <View style={[styles.container, { padding: 20 }]}>
-      <Text style={{ color: "#fff", fontSize: 20, marginBottom: 20 }}>
-        Nova Consulta
-      </Text>
+    <View>
+      <StatusBar style="light" />
 
-      <TextInput
-        placeholder="Nome do paciente"
-        placeholderTextColor="#ccc"
-        style={{
-          backgroundColor: "#fff",
-          marginBottom: 10,
-          padding: 10,
-          borderRadius: 8,
-        }}
-        onChangeText={setPaciente}
-      />
+      <ScrollView>
+        <View>
+          <Text>1. Adicionar Especialidade</Text>
 
-      <TextInput
-        placeholder="Nome do médico"
-        placeholderTextColor="#ccc"
-        style={{
-          backgroundColor: "#fff",
-          marginBottom: 20,
-          padding: 10,
-          borderRadius: 8,
-        }}
-        onChangeText={setMedico}
-      />
+          <TextInput
+            placeholder="Nome da especialidade"
+            value={nomeEsp}
+            onChangeText={setNomeEsp}
+          />
 
-      <Button title="Salvar Consulta" onPress={salvar} />
+          <TextInput
+            placeholder="Descrição"
+            value={descEsp}
+            onChangeText={setDescEsp}
+          />
 
-      <View style={{ marginTop: 10 }}>
-        <Button title="Voltar" onPress={() => navigation.goBack()} />
-      </View>
+          <Button
+            title="Adicionar Especialidade"
+            onPress={adicionarEspecialidade}
+          />
+
+          <View>
+            {especialidades.map((esp) => (
+              <Text key={esp.id}>
+                • {esp.nome} - {esp.descricao}
+              </Text>
+            ))}
+          </View>
+        </View>
+
+        <View>
+          <Text>2. Adicionar Médico</Text>
+
+          <TextInput
+            placeholder="Nome do médico"
+            value={nomeMed}
+            onChangeText={setNomeMed}
+          />
+
+          <TextInput
+            placeholder="CRM"
+            value={crmMed}
+            onChangeText={setCrmMed}
+          />
+
+          <Button title="Adicionar Médico" onPress={adicionarMedico} />
+
+          <View>
+            {medicos.map((med) => (
+              <Text key={med.id}>
+                • {med.nome} ({med.crm}) - {med.especialidade.nome}
+              </Text>
+            ))}
+          </View>
+        </View>
+
+        <View>
+          <Text>3. Criar Consulta de Teste</Text>
+
+          <TextInput
+            placeholder="Nome do paciente"
+            value={nomePac}
+            onChangeText={setNomePac}
+          />
+
+          <TextInput
+            placeholder="Data (DD/MM/AAAA)"
+            value={dataConsulta}
+            onChangeText={setDataConsulta}
+          />
+
+          <Button title="Criar Consulta" onPress={criarConsultaTeste} />
+        </View>
+
+        <View />
+      </ScrollView>
     </View>
   );
 }
