@@ -11,6 +11,7 @@ export interface Consulta {
   observacoes: string;
 }
 
+
 export interface Paciente {
   nome: string;
   cpf: string;
