@@ -1,77 +1,106 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Button, Alert } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Consulta } from '../interfaces/consulta';
-import  ConsultaCard  from '../components/ConsultaCard';
-import { styles } from '../styles/app.styles';
-
-import { obterConsultas, salvarConsultas } from '../services/storage';
-
+import React, { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { useFocusEffect } from "@react-navigation/native";
+import { Consulta } from "../interfaces/consulta";
+import ConsultaCard from "../components/ConsultaCard";
+import { styles } from "../styles/app.styles";
+import {
+  obterConsultas,
+  salvarConsultas,
+  obterPacienteLogado,
+  removerPacienteLogado,
+} from "../services/storage";
 
 export default function Home({ navigation }: any) {
-
   const [consultas, setConsultas] = useState<Consulta[]>([]);
+  const [nomePaciente, setNomePaciente] = useState("");
 
+  useFocusEffect(
+    React.useCallback(() => {
+      carregar();
+    }, [])
+  );
 
-  useEffect(() => {
-    carregarConsultas();
-  }, []);
+  async function carregar() {
+    const paciente = await obterPacienteLogado();
 
-  async function carregarConsultas() {
-    const consultasSalvas = await obterConsultas();
-    setConsultas(consultasSalvas);
+    if (!paciente) {
+      navigation.replace("Login");
+      return;
+    }
+
+    setNomePaciente(paciente.nome);
+
+    const todas = await obterConsultas();
+
+    const filtradas = todas.filter(
+      (c) => c.paciente.id === paciente.id
+    );
+
+    setConsultas(filtradas);
   }
 
-  async function confirmarConsulta(consultaId: number) {
+  async function confirmar(id: number) {
+    const todas = await obterConsultas();
 
-    const consultasAtualizadas = consultas.map((c) =>
-      c.id === consultaId ? { ...c, status: 'confirmada' as const } : c
+    const atualizadas: Consulta[] = todas.map((c) =>
+      c.id === id ? { ...c, status: "confirmada" as const } : c
     );
-    setConsultas(consultasAtualizadas); 
-    await salvarConsultas(consultasAtualizadas); 
+
+    await salvarConsultas(atualizadas);
+    carregar();
   }
 
-  async function cancelarConsulta(consultaId: number) {
-    const consultasAtualizadas = consultas.map((c) =>
-      c.id === consultaId ? { ...c, status: 'cancelada' as const } : c
+  async function cancelar(id: number) {
+    const todas = await obterConsultas();
+
+    const atualizadas: Consulta[] = todas.map((c) =>
+      c.id === id ? { ...c, status: "cancelada" as const } : c
     );
-    setConsultas(consultasAtualizadas);
-    await salvarConsultas(consultasAtualizadas);
+
+    await salvarConsultas(atualizadas);
+    carregar();
+  }
+
+  function logout() {
+    Alert.alert("Sair", "Deseja sair?", [
+      { text: "Cancelar" },
+      {
+        text: "Sair",
+        onPress: async () => {
+          await removerPacienteLogado();
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Login" }],
+          });
+        },
+      },
+    ]);
   }
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.titulo}>Minhas Consultas</Text>
-          <Text style={styles.subtitulo}>
-            {consultas.length} consulta(s) agendada(s)
-          </Text>
-        </View>
+        <Text style={styles.titulo}>Olá, {nomePaciente}</Text>
 
-        {consultas.length === 0 ? (
-          <View style={{ padding: 20, alignItems: 'center' }}>
-            <Text style={{ color: '#666', marginBottom: 20 }}>
-              Nenhuma consulta agendada ainda
-            </Text>
+        <TouchableOpacity style={styles.botao} onPress={() => navigation.navigate("Agendamento")}>
+          <Text style={styles.botaoTexto}>Agendar Consulta</Text>
+        </TouchableOpacity>
 
-            <Button
-              title="Ir para Admin"
-              onPress={() => navigation.navigate('Admin')}
-            />
-          </View>
-        ) : (
-          consultas.map((consulta) => (
-            <ConsultaCard
-              key={consulta.id}
-              consulta={consulta}
-              onConfirmar={() => confirmarConsulta(consulta.id)}
-              onCancelar={() => cancelarConsulta(consulta.id)}
-            />
-          ))
-        )}
+        <TouchableOpacity style={styles.botao} onPress={logout}>
+          <Text style={styles.botaoTexto}>Sair</Text>
+        </TouchableOpacity>
+
+        {consultas.map((c) => (
+          <ConsultaCard
+            key={c.id}
+            consulta={c}
+            onConfirmar={() => confirmar(c.id)}
+            onCancelar={() => cancelar(c.id)}
+          />
+        ))}
       </ScrollView>
     </View>
   );

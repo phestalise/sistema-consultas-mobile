@@ -1,88 +1,62 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Especialidade } from "../types/especialidade";
-import { Medico } from "../interfaces/medico";
-import { Consulta } from "../interfaces/consulta";
+import { Consulta, Paciente } from "../interfaces/consulta";
 
 const KEYS = {
-  ESPECIALIDADES: "@consultas:especialidades",
-  MEDICOS: "@consultas:medicos",
-  CONSULTAS: "@consultas:consultas",
+  CONSULTAS: "@consultas",
+  PACIENTES: "@pacientes",
+  PACIENTE_LOGADO: "@paciente_logado",
 };
 
-
-
-export async function salvarEspecialidades(especialidades: Especialidade[]) {
-  try {
-    await AsyncStorage.setItem(
-      KEYS.ESPECIALIDADES,
-      JSON.stringify(especialidades)
-    );
-  } catch (erro) {
-    console.error("Erro ao salvar:", erro);
-  }
-}
-
-export async function obterEspecialidades(): Promise<Especialidade[]> {
-  try {
-    const dados = await AsyncStorage.getItem(KEYS.ESPECIALIDADES);
-    return dados ? JSON.parse(dados) : [];
-  } catch (erro) {
-    console.error("Erro ao obter:", erro);
-    return [];
-  }
-}
-
-
-
-export async function salvarMedicos(medicos: Medico[]) {
-  try {
-    await AsyncStorage.setItem(KEYS.MEDICOS, JSON.stringify(medicos));
-  } catch (erro) {
-    console.error("Erro ao salvar:", erro);
-  }
-}
-
-
-export async function obterMedicos(): Promise<Medico[]> {
-  try {
-    const dados = await AsyncStorage.getItem(KEYS.MEDICOS);
-    return dados ? JSON.parse(dados) : [];
-  } catch (erro) {
-    console.error("Erro ao obter:", erro);
-    return [];
-  }
-}
-
-
-
-export async function salvarConsultas(consultas: Consulta[]) {
-  try {
-    await AsyncStorage.setItem(
-      KEYS.CONSULTAS,
-      JSON.stringify(consultas)
-    );
-  } catch (erro) {
-    console.error("Erro ao salvar:", erro);
-  }
-}
-
-
 export async function obterConsultas(): Promise<Consulta[]> {
-  try {
-    const dados = await AsyncStorage.getItem(KEYS.CONSULTAS);
+  const dados = await AsyncStorage.getItem(KEYS.CONSULTAS);
+  return dados ? JSON.parse(dados) : [];
+}
 
-    if (dados) {
-      const consultas = JSON.parse(dados);
+export async function salvarConsultas(lista: Consulta[]) {
+  await AsyncStorage.setItem(KEYS.CONSULTAS, JSON.stringify(lista));
+}
 
-      return consultas.map((c: any) => ({
-        ...c,
-        data: new Date(c.data),
-      }));
-    }
+export async function obterPacientes(): Promise<Paciente[]> {
+  const dados = await AsyncStorage.getItem(KEYS.PACIENTES);
+  return dados ? JSON.parse(dados) : [];
+}
 
-    return [];
-  } catch (erro) {
-    console.error("Erro ao obter:", erro);
-    return [];
+export async function salvarPacientes(lista: Paciente[]) {
+  await AsyncStorage.setItem(KEYS.PACIENTES, JSON.stringify(lista));
+}
+
+export async function salvarPacienteLogado(paciente: Paciente) {
+  await AsyncStorage.setItem(KEYS.PACIENTE_LOGADO, JSON.stringify(paciente));
+}
+
+export async function obterPacienteLogado(): Promise<Paciente | null> {
+  const dados = await AsyncStorage.getItem(KEYS.PACIENTE_LOGADO);
+  return dados ? JSON.parse(dados) : null;
+}
+
+export async function removerPacienteLogado() {
+  await AsyncStorage.removeItem(KEYS.PACIENTE_LOGADO);
+}
+
+export async function inicializarDados() {
+  const pacientes = await obterPacientes();
+
+  if (pacientes.length === 0) {
+    const iniciais: Paciente[] = [
+      {
+        id: 1,
+        nome: "Maria Silva",
+        cpf: "13110521835",
+        email: "maria@email.com",
+      },
+      {
+        id: 2,
+        nome: "João Santos",
+        cpf: "12345678900",
+        email: "joao@email.com",
+      },
+    ];
+
+    await salvarPacientes(iniciais);
   }
 }

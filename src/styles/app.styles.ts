@@ -4,36 +4,44 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#1565C0",
-  },
-
-  containerConfirmado: {
-    backgroundColor: "#2E7D32",
-  },
-
-  containerCancelado: {
-    backgroundColor: "#C62828",
+    padding: 20,
   },
 
   scrollContent: {
-    padding: 24,
-    paddingTop: 50,
     paddingBottom: 30,
   },
 
   header: {
-    marginBottom: 25,
+    marginBottom: 20,
   },
 
   titulo: {
-    fontSize: 26,
+    fontSize: 24,
+    color: "#fff",
     fontWeight: "bold",
-    color: "#FFFFFF",
   },
 
   subtitulo: {
-    fontSize: 15,
-    color: "#FFFFFF",
-    opacity: 0.9,
-    marginTop: 4,
+    color: "#fff",
+  },
+
+  input: {
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+
+  botao: {
+    backgroundColor: "#4CAF50",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+
+  botaoTexto: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
   },
 });

@@ -1,5 +1,12 @@
 import { Medico } from "./medico";
 
+export interface Paciente {
+  id: number;
+  nome: string;
+  cpf: string;
+  email: string;
+  telefone?: string;
+}
 
 export interface Consulta {
   id: number;
@@ -8,13 +15,5 @@ export interface Consulta {
   data: Date;
   valor: number;
   status: "agendada" | "confirmada" | "cancelada";
-  observacoes: string;
-}
-
-
-export interface Paciente {
-  nome: string;
-  cpf: string;
-  email: string;
-  telefone?: string;
+  observacoes?: string;
 }

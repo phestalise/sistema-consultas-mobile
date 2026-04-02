@@ -1,27 +1,26 @@
-
 import React from "react";
 import { View, Text, Button } from "react-native";
 import { Consulta } from "../interfaces/consulta";
 import { styles } from "../styles/consultaCard.styles";
-type ConsultaCardProps = {
+
+type Props = {
   consulta: Consulta;
   onConfirmar?: () => void;
   onCancelar?: () => void;
 };
-export default function ConsultaCard({
-  consulta,
-  onConfirmar,
-  onCancelar,
-}: ConsultaCardProps) {
-  function formatarValor(valor: number): string {
+
+export default function ConsultaCard({ consulta, onConfirmar, onCancelar }: Props) {
+  function formatarValor(valor: number) {
     return valor.toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL",
     });
   }
-  function formatarData(data: Date): string {
-    return data.toLocaleDateString("pt-BR");
+
+  function formatarData(data: Date) {
+    return new Date(data).toLocaleDateString("pt-BR");
   }
+
   return (
     <View style={styles.card}>
       <View
@@ -31,21 +30,13 @@ export default function ConsultaCard({
           consulta.status === "cancelada" && styles.statusCancelada,
         ]}
       >
-        <Text style={styles.statusTexto}>
-          {consulta.status.toUpperCase()}
-        </Text>
+        <Text style={styles.statusTexto}>{consulta.status.toUpperCase()}</Text>
       </View>
 
       <View style={styles.secao}>
         <Text style={styles.label}>Médico</Text>
         <Text style={styles.info}>{consulta.medico.nome}</Text>
         <Text style={styles.info}>{consulta.medico.especialidade.nome}</Text>
-      </View>
-
-      <View style={styles.secao}>
-        <Text style={styles.label}>Paciente</Text>
-        <Text style={styles.info}>{consulta.paciente.nome}</Text>
-        <Text style={styles.info}>{consulta.paciente.cpf}</Text>
       </View>
 
       <View style={styles.secao}>
@@ -66,7 +57,7 @@ export default function ConsultaCard({
       ) : null}
 
       <View style={styles.acoes}>
-        {onConfirmar ? (
+        {onConfirmar && (
           <View style={styles.botaoContainer}>
             <Button
               title="Confirmar"
@@ -74,8 +65,8 @@ export default function ConsultaCard({
               disabled={consulta.status === "confirmada"}
             />
           </View>
-        ) : null}
-        {onCancelar ? (
+        )}
+        {onCancelar && (
           <View style={styles.botaoContainer}>
             <Button
               title="Cancelar"
@@ -84,7 +75,7 @@ export default function ConsultaCard({
               disabled={consulta.status === "cancelada"}
             />
           </View>
-        ) : null}
+        )}
       </View>
     </View>
   );
